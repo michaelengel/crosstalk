@@ -1,0 +1,26 @@
+#!/bin/bash
+
+make="${MAKE:-make}"
+
+makesample=true
+if [[ $1 == "--nosample" ]]
+then
+	makesample=false
+	shift
+fi
+
+cd vchiq
+$make $1 $2 || exit
+cd ..
+
+cd sound
+$make $1 $2 || exit
+
+if [[ $makesample == true ]]
+then
+	cd sample
+	$make $1 $2 || exit
+	cd ..
+fi
+
+cd ..

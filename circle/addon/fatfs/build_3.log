@@ -1,0 +1,12 @@
+rm -f *.d *.o *.a *.elf *.lst *.img *.hex *.cir *~  ../src/*.o ../src/*.d
+  CC    ff.o
+  CPP   diskio.o
+  CPP   ffsystem.o
+  CC    ffunicode.o
+  AR    libfatfs.a
+rm -f *.d *.o *.a *.elf *.lst *.img *.hex *.cir *~  ../src/*.o ../src/*.d
+  CC    ff.o
+  CPP   diskio.o
+  CPP   ffsystem.o
+  CC    ffunicode.o
+  AR    libfatfs.a

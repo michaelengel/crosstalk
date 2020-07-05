@@ -1,0 +1,6 @@
+overscan_top=0
+overscan_bottom=0
+overscan_left=0
+overscan_right=0
+hdmi_group=auto
+hdmi_mode=16

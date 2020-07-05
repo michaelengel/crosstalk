@@ -1,0 +1,7 @@
+README
+
+This sample program realizes some light effects on a WS2801, WS2812, WS2812B or
+SK6812 controlled LED stripe connected to a SPI master. You have to configure
+the program in the kernel.cpp file to meet your configuration before build.
+
+The WS28XX library and sample was initially developed by Arjan van Vught.

@@ -1,0 +1,7 @@
+README
+
+The frame buffer is initialized (normally with maximum possible size) and a
+rectangle with a cross inside is drawn on it. You can create a file cmdline.txt
+like this on the SD(HC) card to change the frame buffer size:
+
+width=640 height=480

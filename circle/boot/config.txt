@@ -1,0 +1,21 @@
+#
+# Enable 64-bit mode (AArch64)
+#
+# This file must be copied along with the generated kernel8[-rpi4].img
+# onto a SDHC card with FAT file system, if 64-bit mode is used.
+#
+
+arm_64bit=1
+
+[pi2]
+kernel=kernel8.img
+
+[pi3]
+kernel=kernel8.img
+
+[pi3+]
+kernel=kernel8.img
+
+[pi4]
+armstub=armstub8-rpi4.bin
+kernel=kernel8-rpi4.img

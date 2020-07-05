@@ -1,0 +1,20 @@
+rm -f *.d *.o *.a *.elf *.lst *.img *.hex *.cir *~  ../src/*.o ../src/*.d
+  CPP   emmc.o
+  CPP   mmchost.o
+  CPP   sdhost.o
+  AR    libsdcard.a
+rm -f *.d *.o *.a *.elf *.lst *.img *.hex *.cir *~  ../src/*.o ../src/*.d
+  CPP   emmc.o
+  CPP   mmchost.o
+  CPP   sdhost.o
+  AR    libsdcard.a
+rm -f *.d *.o *.a *.elf *.lst *.img *.hex *.cir *~  ../src/*.o ../src/*.d
+  CPP   emmc.o
+  CPP   mmchost.o
+  CPP   sdhost.o
+  AR    libsdcard.a
+rm -f *.d *.o *.a *.elf *.lst *.img *.hex *.cir *~  ../src/*.o ../src/*.d
+  CPP   emmc.o
+  CPP   mmchost.o
+  CPP   sdhost.o
+  AR    libsdcard.a
