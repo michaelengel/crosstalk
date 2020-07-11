@@ -43,7 +43,7 @@ GC_SECTIONS ?= 0
 CC	= $(PREFIX)gcc
 CPP	= $(PREFIX)g++
 AS	= $(CC)
-LD	= $(PREFIX)ld
+LD	= $(PREFIX)gcc
 AR	= $(PREFIX)ar
 
 ifeq ($(strip $(AARCH)),32)
@@ -117,7 +117,7 @@ endif
 
 ifeq ($(strip $(GC_SECTIONS)),1)
 CFLAGS	+= -ffunction-sections -fdata-sections
-LDFLAGS	+= --gc-sections
+LDFLAGS	+= -Wl,--gc-sections
 endif
 
 OPTIMIZE ?= -O2
@@ -130,8 +130,7 @@ DEFINE	+= -D__circle__ -DRASPPI=$(RASPPI) -DSTDLIB_SUPPORT=$(STDLIB_SUPPORT) \
 AFLAGS	+= $(ARCH) $(DEFINE) $(INCLUDE) $(OPTIMIZE)
 CFLAGS	+= $(ARCH) -fsigned-char -ffreestanding $(DEFINE) $(INCLUDE) $(OPTIMIZE) -g
 CPPFLAGS+= $(CFLAGS) -std=c++14
-# LDFLAGS	+= -Wl,--section-start=.init=$(LOADADDR)
-LDFLAGS	+= --section-start=.init=$(LOADADDR)
+LDFLAGS	+= -Wl,--section-start=.init=$(LOADADDR)
 
 ifeq ($(strip $(CHECK_DEPS)),1)
 DEPS	= $(OBJS:.o=.d)
@@ -160,12 +159,9 @@ endif
 
 $(TARGET).img: $(OBJS) $(LIBS) $(CIRCLEHOME)/circle.ld
 	@echo "  LD    $(TARGET).elf"
-	# @$(LD) -o $(TARGET).elf -Wl,-Map $(TARGET).map $(LDFLAGS) \
-	# 	-T $(CIRCLEHOME)/circle.ld $(CRTBEGIN) $(OBJS) \
-	# 	-Wl,--start-group $(LIBS) $(EXTRALIBS) -Wl,--end-group $(CRTEND)
-	@$(LD) -o $(TARGET).elf -Map $(TARGET).map $(LDFLAGS) \
-		-T $(CIRCLEHOME)/circle.ld $(CRTBEGIN) $(OBJS) \
-		--start-group $(LIBS) $(EXTRALIBS) --end-group $(CRTEND)
+	@$(LD) -o $(TARGET).elf -Wl,-Map=$(TARGET).map $(LDFLAGS) \
+		-Wl,-T $(CIRCLEHOME)/circle.ld $(CRTBEGIN) $(OBJS) \
+		-Wl,--start-group $(LIBS) $(EXTRALIBS) -Wl,--end-group $(CRTEND)
 	@echo "  DUMP  $(TARGET).lst"
 	@$(PREFIX)objdump -d $(TARGET).elf | $(PREFIX)c++filt > $(TARGET).lst
 	@echo "  COPY  $(TARGET).img"

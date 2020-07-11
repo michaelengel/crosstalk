@@ -47,6 +47,11 @@ public:
 	TCPUSpeed GetCPUSpeed (void) const;
 	unsigned GetSoCMaxTemp (void) const;
 
+	unsigned GetCursorType (void) const;
+	unsigned GetCursorColor (void) const;
+
+	unsigned GetBootMode (void) const;
+
 	static CKernelOptions *Get (void);
 
 private:
@@ -55,6 +60,8 @@ private:
 	static char *GetOptionValue (char *pOption);	// returns value and terminates option with '\0'
 
 	static unsigned GetDecimal (char *pString);	// returns decimal value, -1 on error
+
+	static unsigned GetHex (char *pString);		// returns hexadecimal value, -1 on error
 
 private:
 	TPropertyTagCommandLine m_TagCommandLine;
@@ -76,6 +83,11 @@ private:
 
 	TCPUSpeed m_CPUSpeed;
 	unsigned m_nSoCMaxTemp;
+
+	unsigned m_CursorType;
+	unsigned m_nCursorColor;
+
+	unsigned m_nBootMode;
 
 	static CKernelOptions *s_pThis;
 };

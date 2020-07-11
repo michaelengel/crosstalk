@@ -27,9 +27,12 @@
 
 
 #include <cstdint>
+#include <cstring>
 #include <algorithm>
 #include "objmemory.h"
 #include "oops.h"
+
+#include "snapshot.h"
 
 #ifndef GC_REF_COUNT
 #ifndef GC_MARK_SWEEP
@@ -37,6 +40,12 @@
 #endif
 #endif
 
+// #define LOAD_FROM_SD 0
+// #define LOAD_FAST_FROM_SD 1
+
+// 0 = load from memory image, 1 = load from SD, 2 = load fast from SD
+int bootmode = 0;
+long offset = 0;
 
 ObjectMemory::ObjectMemory(
                            IHardwareAbstractionLayer *halInterface
@@ -57,21 +66,57 @@ bool ObjectMemory::loadObjectTable(IFileSystem *fileSystem, int fd)
 {
     // First two 32-bit values have the object space length and object table lengths in words
     std::int32_t objectTableLength;
-    
-    if (fileSystem->seek_to(fd, 4) == -1) // Skip over object space length
-        return false;
-    if (fileSystem->read(fd, (char *)&objectTableLength, sizeof(objectTableLength)) != sizeof(objectTableLength))
-        return false;
-    int fileSize = fileSystem->file_size(fd);
-    
-    if (fileSystem->seek_to(fd, fileSize - objectTableLength*2) == -1) // Reposition to start of object table
-        return false;
 
-    for(int objectPointer = 0; objectPointer < objectTableLength; objectPointer+=2)
+    int fileSize = 0;
+    switch (bootmode) {
+        case 0: // load from memory image
+            memcpy((char *)&objectTableLength, &___files_snapshot_im[4], sizeof(objectTableLength));
+            fileSize = ___files_snapshot_im_len;
+            break;
+        case 1: // load slow from SD
+            if (fileSystem->seek_to(fd, 4) == -1) // Skip over object space length
+                return false;
+            if (fileSystem->read(fd, (char *)&objectTableLength, sizeof(objectTableLength)) != sizeof(objectTableLength))
+                return false;
+            fileSize = fileSystem->file_size(fd);
+            break;
+        case 2: // load fast from SD
+            fileSize = fileSystem->file_size(fd);
+            ___files_snapshot_im_len = fileSize;
+            memcpy((char *)&objectTableLength, &___files_snapshot_im[4], sizeof(objectTableLength));
+            break;
+        default:
+            CLogger::Get ()->Write ("objmemory", LogDebug, "Unsupported bootmode %d", bootmode);
+            return false;
+            break;
+    }
+    if (fileSize == -1) {
+        CLogger::Get ()->Write ("objmemory", LogDebug, "Filesize filed");
+    } else {
+        CLogger::Get ()->Write ("objmemory", LogDebug, "Image size is %d bytes", fileSize);
+    }
+    
+    if (bootmode == 1) { // #if LOAD_FROM_SD
+        if (fileSystem->seek_to(fd, fileSize - objectTableLength*2) == -1) { // Reposition to start of object table
+            CLogger::Get ()->Write ("objmemory", LogDebug, "Cannot read object table at offset %d", fileSize - objectTableLength*2);
+            return false;
+        }
+    } else {
+        offset = fileSize - objectTableLength*2;
+    }
+
+    for (int objectPointer = 0; objectPointer < objectTableLength; objectPointer+=2)
     {
         std::uint16_t words[2];
-        if (fileSystem->read(fd, (char *)&words, sizeof(words)) != sizeof(words))
-            return false;
+
+        if (bootmode == 1) { // #if LOAD_FROM_SD
+            if (fileSystem->read(fd, (char *)&words, sizeof(words)) != sizeof(words))
+                return false;
+        } else {
+            memcpy((char *)&words, &___files_snapshot_im[offset], sizeof(words));
+            offset += sizeof(words);
+        }
+
         ot_put(objectPointer, words[0]);
         locationBitsOf_put(objectPointer, words[1]);
     }
@@ -121,13 +166,21 @@ bool ObjectMemory::loadObjects(IFileSystem *fileSystem, int fd)
         // On disk objects are stored contiguously as if a large 20-bit WORD addressed space
         // In this scheme, the OT segment and locations combine to form a WORD address
         const int objectImageWordAddress = (segmentBitsOf(objectPointer) << 16)
-        + locationBitsOf(objectPointer);
+            + locationBitsOf(objectPointer);
         
-        fileSystem->seek_to(fd, ObjectSpaceBaseInImage + objectImageWordAddress * sizeof(std::uint16_t));
+        if (bootmode == 1) { // #if LOAD_FROM_SD
+            fileSystem->seek_to(fd, ObjectSpaceBaseInImage + objectImageWordAddress * sizeof(std::uint16_t));
+        } else {
+            offset = ObjectSpaceBaseInImage + objectImageWordAddress * sizeof(std::uint16_t);
+        }
         
         std::uint16_t objectSize;
-        fileSystem->read(fd, (char *) &objectSize, sizeof(objectSize));
-        
+        if (bootmode == 1) { // #if LOAD_FROM_SD
+            fileSystem->read(fd, (char *) &objectSize, sizeof(objectSize));
+        } else {
+            memcpy((char *)&objectSize, &___files_snapshot_im[offset], sizeof(objectSize));
+            offset += sizeof(objectSize);
+        }
         
         // Account for the extra word used by HugeSize objects
         int extraSpace = objectSize < HugeSize || pointerBitOf(objectPointer) == 0 ? 0 : 1;
@@ -152,7 +205,12 @@ bool ObjectMemory::loadObjects(IFileSystem *fileSystem, int fd)
         
         // Next is the class...
         std::uint16_t classBits;
-        fileSystem->read(fd,(char *) &classBits, sizeof(classBits));
+        if (bootmode == 1) { // #if LOAD_FROM_SD
+            fileSystem->read(fd,(char *) &classBits, sizeof(classBits));
+        } else {
+            memcpy((char *)&classBits, &___files_snapshot_im[offset], sizeof(classBits));
+            offset += sizeof(classBits);
+        }
         
         classBitsOf_put(objectPointer, classBits);
         
@@ -160,7 +218,12 @@ bool ObjectMemory::loadObjects(IFileSystem *fileSystem, int fd)
         for(int wordIndex = 0; wordIndex < objectSize-HeaderSize; wordIndex++)
         {
             std::uint16_t word;
-            fileSystem->read(fd,(char *) &word, sizeof(word));
+            if (bootmode == 1) { // #if LOAD_FROM_SD
+                fileSystem->read(fd,(char *) &word, sizeof(word));
+            } else {
+                memcpy((char *)&word, &___files_snapshot_im[offset], sizeof(word));
+                offset += sizeof(word);
+            }
             // use heap chunk
             storeWord_ofObject_withValue(wordIndex, objectPointer, word);
         }
@@ -204,19 +267,50 @@ bool ObjectMemory::loadObjects(IFileSystem *fileSystem, int fd)
 
 bool ObjectMemory::loadSnapshot(IFileSystem *fileSystem, const char *fileName)
 {
-    // CLogger::Get ()->Write ("ObjectMemory", LogDebug, "open file");
+    int fd;
 
-    int fd = fileSystem->open_file(fileName);
-    if (fd == -1)
-        return false;
+    bootmode = CKernelOptions::Get()->GetBootMode();
+
+    switch (bootmode) {
+        case 0:
+            CLogger::Get ()->Write ("objmemory", LogDebug, "Loading in-memory snapshot");
+            break;
+        case 1:
+        case 2:
+            CLogger::Get ()->Write ("objmemory", LogDebug, "Loading snapshot %s (%s)", fileName, bootmode == 1 ? "slow":"fast");
+            fd = fileSystem->open_file(fileName);
+
+            if (fd == -1) {
+                CLogger::Get ()->Write ("objmemory", LogDebug, "Unable to load snapshot", fileName);
+                return false;
+            }
+            break;
+        default:
+            CLogger::Get ()->Write ("objmemory", LogDebug, "Unsupported bootmode %d", bootmode);
+            return false;
+            break;
+    }
+
+    if (bootmode == 2) { // #if LOAD_FAST_FROM_SD
+        if (fileSystem->file_size(fd) > sizeof(___files_snapshot_im)) {
+            CLogger::Get ()->Write ("objmemory", LogDebug, "Snapshot file %s too large", fileName);
+            return false;
+        }
+
+        int bytes;
+        bytes = fileSystem->read(fd, (char *)___files_snapshot_im, fileSystem->file_size(fd));
+        if (bytes != fileSystem->file_size(fd)) {
+            CLogger::Get ()->Write ("objmemory", LogDebug, "Short read, got %d bytes, expected %d", 
+                bytes, fileSystem->file_size(fd));
+            return false;
+        }
+    }
      
-    // CLogger::Get ()->Write ("ObjectMemory", LogDebug, "load objects");
-
     bool succeeded = loadObjectTable(fileSystem, fd) && loadObjects(fileSystem, fd);
     
-    // CLogger::Get ()->Write ("ObjectMemory", LogDebug, "close files");
-
-    fileSystem->close_file(fd);
+    if (bootmode > 0) {
+        fileSystem->close_file(fd);
+    }
     
     return succeeded;
 }
@@ -653,7 +747,7 @@ void ObjectMemory::markAccessibleObjects()
 
 void ObjectMemory::outOfMemoryError()
 {
-    assert(0);
+    // assert(0);
     hal->error("Out of memory");
 }
 
@@ -1087,15 +1181,11 @@ int ObjectMemory::countDown(int rootObjectPointer)
    						self deallocate: objectPointer]]
    */
     
-// CLogger::Get ()->Write ("objmemory", LogDebug, "in countDown 1");
-
     if (isIntegerObject(rootObjectPointer))
         return rootObjectPointer;
     
-// CLogger::Get ()->Write ("objmemory", LogDebug, "in countDown 2");
     RUNTIME_CHECK(countBitsOf(rootObjectPointer)>0);
     
-// CLogger::Get ()->Write ("objmemory", LogDebug, "in countDown 3");
     // this is a pointer, so decrement its reference count
     return forAllObjectsAccessibleFrom_suchThat_do(rootObjectPointer,
        [this](int objectPointer) { // predicate
@@ -1106,7 +1196,7 @@ int ObjectMemory::countDown(int rootObjectPointer)
             return count == 0;
        },
        [this](int objectPointer) { // action
-// CLogger::Get ()->Write ("objmemory", LogDebug, "reference count zero. freeing ..."); // << objectPointer << " (" << classNameOfObject(fetchClassOf(objectPointer)) << ") free oops = " << freeOops << "\n";
+            // std::cout << "reference count zero. freeing " << objectPointer << " (" << classNameOfObject(fetchClassOf(objectPointer)) << ") free oops = " << freeOops << "\n";
             countBitsOf_put(objectPointer, 0);
             freeWords += spaceOccupiedBy(objectPointer); //dbanay
             freeOops++;
@@ -1342,15 +1432,19 @@ int ObjectMemory::storePointer_ofObject_withValue(int fieldIndex, int objectPoin
    	^self heapChunkOf: objectPointer word: chunkIndex put: valuePointer
    */
 
+ // CLogger::Get ()->Write ("objmemory", LogDebug, "storePointer_ofObject_withValue 1");
     RUNTIME_CHECK(fieldIndex >= 0 && fieldIndex < fetchWordLengthOf(objectPointer));
     RUNTIME_CHECK(valuePointer > 0);
 
+ // CLogger::Get ()->Write ("objmemory", LogDebug, "storePointer_ofObject_withValue 2");
     chunkIndex = HeaderSize + fieldIndex;
     
 #ifdef GC_REF_COUNT
     countUp(valuePointer);
+ // CLogger::Get ()->Write ("objmemory", LogDebug, "storePointer_ofObject_withValue 3");
     countDown(heapChunkOf_word(objectPointer, chunkIndex));
 #endif
+ // CLogger::Get ()->Write ("objmemory", LogDebug, "storePointer_ofObject_withValue 4");
     return heapChunkOf_word_put(objectPointer, chunkIndex, valuePointer);
 }
 

@@ -1,0 +1,37 @@
+Version 0.2 (2020-07-10):
+
+- Some code cleanup
+
+- New boot files in sdcard (support for Raspberry Pi 4)
+
+- Configurable cursor color (default black)
+  Use parameter "cursorcolor" in cmdline.txt as 8 hex digits (AARRGGBB), 
+  e.g. cursorcolor=00ff00ff for magenta
+
+- Configurable bootmode: parameter "bootmode" in cmdline.txt (default 0)
+  bootmode = 0 => load included snapshot memory image (smalltalk/src/snapshot.h)
+  bootmode = 1 => load file "snapshot.im" from SD card using small reads (slow)
+  bootmode = 2 => load file "snapshot.im" from SD card, memory cached read (faster)
+
+- Library configuration
+  Automatically find paths to arm-none-eabi cross libc/libstdc++ in smalltalk/raspberry/Makefile
+
+Known problems in version 0.2:
+
+- Doesn't boot on Raspberry Pi 4B 8GB version
+- No support for a real-time clock (the Raspberry Pi doesn't have one by default)
+- Display scaling is unsupported
+- The keyboard buffer implementation is extremely simple and can lead to bouncing
+- Changing the VM resolution to >= 2^10 pixels (e.g., 1024*1024) crashes the VM 
+  (probably a limitation of the object size in Smalltalk-80)
+
+Nice to have:
+- Changing the screen resolution should redraw the screen borders at least
+- No fallback to bootmode 0 if snapshot.im not existent/broken on SD card
+- Build infrastructure could use improvements
+
+Upgrading from version 0.1:
+
+- Remove "kernel8-32.img" from the boot partition (otherwise, the Raspberry Pi 4 
+  will not boot)
+

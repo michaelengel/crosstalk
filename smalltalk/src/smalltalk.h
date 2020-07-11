@@ -80,11 +80,6 @@ public:
         vm_options(vm_options),
         fileSystem(vm_options.root_directory),
         interpreter(this, &fileSystem),
-#ifdef SOFTWARE_MOUSE_CURSOR
-        mouse_texture(0),
-#else
-        // cursor(0),
-#endif
         display_width(0), display_height(0),
         scheduled_semaphore(0), input_semaphore(0), scheduled_time(0),
         event_count(0), last_event_time(0),
@@ -97,22 +92,6 @@ public:
     
     ~VirtualMachine()
     {
-#if 0
-#ifdef SOFTWARE_MOUSE_CURSOR
-        if (mouse_texture)
-            SDL_DestroyTexture(mouse_texture);
-#else
-        if (cursor)
-            SDL_FreeCursor(cursor);
-
-#endif
-        if (texture)
-            SDL_DestroyTexture(texture);
-        if (renderer)
-            SDL_DestroyRenderer(renderer);
-        if (window)
-            SDL_DestroyWindow(window);
-#endif
     }
 
     void set_input_semaphore(int semaphore);
@@ -151,11 +130,7 @@ public:
 
     FatST80FileSystem fileSystem;
 
-    int *window;
-    int *renderer;
-    int *texture;
-
-    int *mouse_texture;
+    int screen_initialized;
 
 private:
     Interpreter interpreter;

@@ -62,6 +62,9 @@ public:
 
         void SetMouseState (int x, int y);
 
+	unsigned GetCursorType (void);
+	unsigned GetCursorColor (void);
+
 private:
         static void KeyPressedHandler (const char *pString);
         static void KeyStatusHandlerRawStub (unsigned char ucModifiers, const unsigned char RawKeys[6]);
@@ -94,6 +97,11 @@ private:
 	int m_nPosY = 0;
 	unsigned m_nButtons = 0;
 	CMouseDevice *m_pMouse;
+
+	unsigned m_CursorType = 0;
+	unsigned m_CursorColor = 0;
+
+	unsigned m_nBootMode = 0;
 
         int m_RawKeys[6] = {0};
 

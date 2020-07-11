@@ -1,1 +1,1 @@
-logdev=screen loglevel=4
+logdev=screen loglevel=4 cursorcolor=00ff0000 bootmode=2

@@ -39,8 +39,8 @@ CKernel::CKernel (void)
 	m_Logger (m_Options.GetLogLevel ()),
         m_USBHCI (&m_Interrupt, &m_Timer),
         m_EMMC (&m_Interrupt, &m_Timer, &m_ActLED),
-	m_nPosX (0),
-	m_nPosY (0)
+	m_nPosX (0), m_nPosY (0),
+	m_nBootMode (m_Options.GetBootMode ())
 {
 	s_pThis = this;
 
@@ -78,6 +78,9 @@ boolean CKernel::Initialize (void)
 		{
 			pTarget = &m_Screen;
 		}
+
+        	m_CursorType = m_Options.GetCursorType ();
+	        m_CursorColor = m_Options.GetCursorColor ();
 
 		bOK = m_Logger.Initialize (pTarget);
 	}
@@ -170,7 +173,7 @@ TShutdownMode CKernel::Run (void)
 
 	pMouse->RegisterEventHandler (MouseEventStub);
 
-        CLogger::Get ()->Write ("kernel", LogDebug, "SD mount");
+        CLogger::Get ()->Write ("runtime", LogDebug, "SD mount");
 
 	FATFS m_FileSystem;
 
@@ -332,5 +335,13 @@ int CKernel::GetKeyboardState (unsigned *keys) {
 void CKernel::SetMouseState (int x, int y) {
    m_nPosX = x;
    m_nPosY = y;
+}
+
+unsigned CKernel::GetCursorType (void) {
+   return m_CursorType;
+}
+
+unsigned CKernel::GetCursorColor (void) {
+   return m_CursorColor;
 }
 

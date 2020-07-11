@@ -1,74 +1,0 @@
-logger: Circle 42 started on Raspberry Pi Zero W
-timer: SpeedFactor is 1.00
-usbdev0-1: Device ven5e3-608, dev9-0-1 found
-usbdev0-1: Interface int9-0-0 found
-usbdev0-1: Using device/interface int9-0-0
-usbdev1-3: Device ven93a-2510 found
-usbdev1-3: Interface int3-1-2 found
-usbdev1-3: Using device/interface int3-1-2
-usbdev1-4: Device ven4d9-a0f8 found
-usbdev1-4: Interface int3-1-1 found
-usbdev1-4: Using device/interface int3-1-1
-usbdev1-4: Interface int3-0-0 found
-usbdev1-4: Using device/interface int3-0-0
-usbdev1-4: Interface int3-0-0 found
-usbdev1-4: Using device/interface int3-0-0
-usbhub: Port 3: Device configured
-usbhub: Port 4: Device configured
-dwroot: Device configured
-kernel: Compile time: Jul  2 2020 17:18:11
-kernel: Keyboard: o
-kernel: Keyboard: o
-kernel: Keyboard: o
-kernel: Keyboard: o
-kernel: Keyboard: o
-kernel: Keyboard: m
-kernel: Keyboard: k
-kernel: Keyboard: ,
-kernel: Keyboard: n
-kernel: Keyboard: n
-kernel: Keyboard: l
-kernel: Keyboard: b
-kernel: Keyboard: j
-kernel: Keyboard: ä
-kernel: Keyboard: ö
-kernel: Keyboard: ä
-kernel: Keyboard: Ä
-kernel: Keyboard: 
-
-kernel: Keyboard: -
-kernel: Keyboard: 0
-kernel: Keyboard: 5
-kernel: Keyboard: 6
-kernel: Keyboard: 5
-kernel: Keyboard: 6
-kernel: Keyboard: 6
-kernel: Keyboard: r
-kernel: Keyboard: z
-kernel: Keyboard: 7
-kernel: Keyboard: h
-kernel: Keyboard: y
-kernel: Keyboard: x
-kernel: Keyboard: x
-kernel: Keyboard: e
-kernel: Keyboard: x
-kernel: Keyboard: s
-kernel: Keyboard: e
-kernel: Keyboard: r
-kernel: Keyboard: 3
-kernel: Keyboard: 4
-kernel: Keyboard: a
-kernel: Keyboard: y
-kernel: Keyboard: s
-kernel: Keyboard: x
-kernel: Keyboard: d
-kernel: Keyboard: 4
-kernel: Keyboard: r
-kernel: Keyboard: D
-kernel: Keyboard: %
-kernel: Keyboard: $
-kernel: Keyboard: S
-kernel: Keyboard: X
-kernel: Keyboard: E
-kernel: Keyboard: D
-

@@ -25,13 +25,6 @@
 //  SOFTWARE.
 //
 
-// If defined, the mouse cursor is rendered by the application rather than the system.
-// System rendering is preferred, but on Windows, the cursor didn't always change
-// if the left mouse button was being held down. In addition, I found that (again)
-// on Windows, on high resolution displays the mouse cursor was tiny
-// (it wasn't respecting the display scaling setting).
-//
-
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -47,8 +40,6 @@
 #include "usb_hid_keys.h"
 
 typedef std::uint16_t Pixel;
-// static const SDL_PixelFormatEnum TextureFormat = SDL_PIXELFORMAT_RGB565;
-
 
 static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int srcBit)
 {
@@ -74,7 +65,6 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
     // last reset or rolled over (a 32-bit unsigned number)
     std::uint32_t VirtualMachine::get_msclock()
     {
-        // return ticks; // SDL_GetTicks();
         return CKernel::Get()->GetTicks();
     }
     
@@ -148,7 +138,7 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
         {
             for(int i = 0; i < display_width; i++)
             {
-                m_Screen.SetPixel(off_x+i, off_y+h, NORMAL_COLOR /* (h & 1) ^ (i & 1) ? BLACK_COLOR : NORMAL_COLOR */ );
+                m_Screen.SetPixel(off_x+i, off_y+h, (h & 1) ^ (i & 1) ? BLACK_COLOR : NORMAL_COLOR);
             }
         }
 #endif
@@ -165,20 +155,10 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
             dirty_rect.w = width;
             dirty_rect.h = height;
             
-            if (window)
-            {
-                // SDL_SetWindowSize(window, vm_options.display_scale*display_width, vm_options.display_scale*display_height);
-                // SDL_DestroyTexture(texture);
-            }
-            else
-            {
-                window = (int *)42;
-                uint32_t flags = 0; // SDL_RENDERER_ACCELERATED | (vm_options.vsync ? SDL_RENDERER_PRESENTVSYNC : 0);
-                renderer = (int *)23;
-            }
+            if (!screen_initialized)
+                screen_initialized = 1;
             
             initialize_texture();
-            
         }
         return true;
     }
@@ -215,7 +195,7 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
                     if ((source_pixel_l & (1<<p)) != 0)
                         m_Screen.SetPixel(off_x+source_word_left*16+(15-p), off_y+prev_y+v, BLACK_COLOR);
                     else
-                        m_Screen.SetPixel(off_x+source_word_left*16+(15-p), off_y+prev_y+v, /* COLOR32(0, 255, 0, 0) */ NORMAL_COLOR);
+                        m_Screen.SetPixel(off_x+source_word_left*16+(15-p), off_y+prev_y+v, NORMAL_COLOR);
             }
 
             if (source_word_left == source_word_right) continue;
@@ -226,7 +206,7 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
                     if ((source_pixel_r & (1<<p)) != 0)
                         m_Screen.SetPixel(off_x+source_word_right*16+(15-p), off_y+prev_y+v, BLACK_COLOR);
                     else
-                        m_Screen.SetPixel(off_x+source_word_right*16+(15-p), off_y+prev_y+v, /* COLOR32(0, 0, 255, 0) */ NORMAL_COLOR);
+                        m_Screen.SetPixel(off_x+source_word_right*16+(15-p), off_y+prev_y+v, NORMAL_COLOR);
             }
         }
 
@@ -237,7 +217,7 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
                     if (m_x+(15-p) >= display_width) continue;
 
                     if ((MyCursorSymbol[v] & (1<<p)) != 0) 
-                        m_Screen.SetPixel(off_x+m_x+(15-p), off_y+m_y+v, HIGH_COLOR);
+                        m_Screen.SetPixel(off_x+m_x+(15-p), off_y+m_y+v, CKernel::Get()->GetCursorColor());
             }
         }
 
@@ -332,7 +312,7 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
     
     void VirtualMachine::error(const char *message)
     {
-        CLogger::Get ()->Write ("objmemory ERROR", LogDebug, message);
+        CLogger::Get ()->Write ("ERROR", LogDebug, message);
         abort();
     }
     
@@ -371,10 +351,6 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
     
     bool VirtualMachine::init()
     {
-#ifdef SOFTWARE_MOUSE_CURSOR
-        // SDL_ShowCursor(0); // We show our own...
-#endif
-
         texture_needs_update = false;
         quit_signalled = false;
         return interpreter.init();
@@ -423,24 +399,6 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
         last_event_time = now;
     }
    
-#if 0
-    void VirtualMachine::paste_clipboard()
-    {
-
-        if (SDL_HasClipboardText())
-        {
-            queue_input_time_words();
-            for(const char *text = SDL_GetClipboardText(); *text; text++)
-            {
-                int ch = *text;
-                if (ch == '\n') ch = '\r';
-                queue_input_word(3, ch);
-                queue_input_word(4, ch);
-            }
-        }
-    }
-#endif
-    
     /*
      decoded keyboard:
      
@@ -457,7 +415,6 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
      of the character on the keytop without shift or control information (i.e., the key with “A”
      on it produces the ASCII for  “a” and the key with “2” and “@“ on it produces the ASCII for “2”).
      */
-    // void VirtualMachine::handle_keyboard_event(const SDL_KeyboardEvent& key)
     void VirtualMachine::handle_keyboard_event(int key)
     {
         static char scantoascii[256] = {
@@ -484,21 +441,12 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
             'Y', 'Z', '{', '|', '}', '~', 127
         };
         
-        // std::uint16_t type = key.type == SDL_KEYDOWN ? 3 : 4;
         std::uint16_t type = 3;
         std::uint16_t param = 0;
         /*
          left shift 136 right shift 137 control 138 alpha-lock 139
          backspace 8 tab 9 line feed 10 return 13 escape 27 space 32 delete 127
          */
-#if 0
-        if (key.keysym.scancode == SDL_SCANCODE_V && key.keysym.mod == KMOD_LGUI)
-        {
-            if (type == 3)
-                paste_clipboard();
-            return;
-        }
-#endif
 
         // My initial plan was to use go unencoded for everything, but
         // when I pressed shift 6, I saw a ~ appear!. It turns out the
@@ -577,7 +525,7 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
         {
             // Save mod state when the button went down
             // when the button is released we will use these rather than active one
-            mods = 0; // SDL_GetModState();
+            mods = 0;
             button_down_mods[button_index] = mods;
         }
         else
@@ -607,7 +555,7 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
     
     void VirtualMachine::render()
     {
-        if (renderer)
+        if (screen_initialized)
         {
             if (texture_needs_update)
             {
@@ -615,23 +563,20 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
                 texture_needs_update = false;
             }
             
-            if (1 /* mouse_texture */)
-            {
-                int mouseX, mouseY; unsigned mouseB;
+            int mouseX, mouseY; unsigned mouseB;
 
-                CKernel::Get()->GetMouseState(&mouseX, &mouseY, &mouseB);
-                CKernel::Get()->GetMouseDevice()->UpdateCursor ();
+            CKernel::Get()->GetMouseState(&mouseX, &mouseY, &mouseB);
+            CKernel::Get()->GetMouseDevice()->UpdateCursor ();
 
-                mouseX = mouseX - off_x;
-                mouseY = mouseY - off_y; 
+            mouseX = mouseX - off_x;
+            mouseY = mouseY - off_y; 
 
-                mouseX = (mouseX >= display_width) ? display_width-1 : mouseX;
-                mouseY = (mouseY >= display_height) ? display_height-1 : mouseY;
-                mouseX = (mouseX < 0) ? 0 : mouseX;
-                mouseY = (mouseY < 0) ? 0 : mouseY;
+            mouseX = (mouseX >= display_width) ? display_width-1 : mouseX;
+            mouseY = (mouseY >= display_height) ? display_height-1 : mouseY;
+            mouseX = (mouseX < 0) ? 0 : mouseX;
+            mouseY = (mouseY < 0) ? 0 : mouseY;
 
-                update_cursor(mouseX, mouseY);
-            }
+            update_cursor(mouseX, mouseY);
 
             dirty_rect.x = 0;
             dirty_rect.y = 0;
@@ -681,7 +626,9 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
         for(;;)
         {
             off_x = (m_Screen.GetWidth() - display_width)/2;
+            if (off_x > display_width/2) off_x = 0;
             off_y = (m_Screen.GetHeight() - display_height)/2;
+            if (off_y > display_height/2) off_y = 0;
 
             process_events();
  
@@ -699,7 +646,7 @@ static inline void expand_pixel(Pixel *destPixel, std::uint16_t srcWord, int src
 
 #if 0
             if (!vm_options.vsync && vm_options.novsync_delay > 0)
-                SDL_Delay(vm_options.novsync_delay); // Don't kill CPU
+                // Delay(vm_options.novsync_delay); // Don't kill CPU
 #endif
         }
     }

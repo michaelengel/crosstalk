@@ -80,12 +80,6 @@ int _read(int file, char *ptr, int len) {
     return -1;
 }
 
-#if 0
-void __cyg_profile_func_enter (void *this_fn, void *call_site) {
-   CLogger::Get ()->Write ("objmemory", LogDebug, "Entering %p from %p", this_fn, call_site);
-}
+void _exit(int code)  _ATTRIBUTE ((__noreturn__));
 
-void __cyg_profile_func_exit  (void *this_fn, void *call_site) {
-   CLogger::Get ()->Write ("objmemory", LogDebug, "Exiting %p from %p", this_fn, call_site);
-}
-#endif
+

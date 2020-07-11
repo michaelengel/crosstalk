@@ -34,7 +34,10 @@ CKernelOptions::CKernelOptions (void)
 	m_bUSBFullSpeed (FALSE),
 	m_nSoundOption (0),
 	m_CPUSpeed (CPUSpeedLow),
-	m_nSoCMaxTemp (60)
+	m_nSoCMaxTemp (60),
+	m_CursorType (0),
+	m_nCursorColor (0),
+	m_nBootMode (0)
 {
 	strcpy (m_LogDevice, "tty1");
 	strcpy (m_KeyMap, DEFAULT_KEYMAP);
@@ -144,6 +147,31 @@ CKernelOptions::CKernelOptions (void)
 				m_nSoCMaxTemp = nValue;
 			}
 		}
+		else if (strcmp (pOption, "cursortype") == 0)
+		{
+			if (strncmp(pValue, "hw", sizeof "hw") == 0)
+				m_CursorType = 1; // hardware cursor
+			else
+				m_CursorType = 0; // software cursor
+		}
+		else if (strcmp (pOption, "cursorcolor") == 0)
+		{
+			unsigned nValue;
+			if (   (nValue = GetHex (pValue)) != INVALID_VALUE)
+			{
+				m_nCursorColor = nValue;
+			} else 
+				m_nCursorColor = 0;
+		}
+		else if (strcmp (pOption, "bootmode") == 0)
+		{
+			unsigned nValue;
+			if (   (nValue = GetDecimal (pValue)) != INVALID_VALUE
+			    && 0 <= nValue && nValue <= 2)
+			{
+				m_nBootMode = nValue;
+			}
+		}
 	}
 }
 
@@ -205,6 +233,21 @@ TCPUSpeed CKernelOptions::GetCPUSpeed (void) const
 unsigned CKernelOptions::GetSoCMaxTemp (void) const
 {
 	return m_nSoCMaxTemp;
+}
+
+unsigned CKernelOptions::GetCursorType (void) const
+{
+	return m_CursorType;
+}
+
+unsigned CKernelOptions::GetCursorColor (void) const
+{
+	return m_nCursorColor;
+}
+
+unsigned CKernelOptions::GetBootMode (void) const
+{
+	return m_nBootMode;
 }
 
 CKernelOptions *CKernelOptions::Get (void)
@@ -289,6 +332,40 @@ unsigned CKernelOptions::GetDecimal (char *pString)
 		unsigned nPrevResult = nResult;
 
 		nResult = nResult * 10 + (chChar - '0');
+		if (   nResult < nPrevResult
+		    || nResult == INVALID_VALUE)
+		{
+			return INVALID_VALUE;
+		}
+	}
+
+	return nResult;
+}
+
+unsigned CKernelOptions::GetHex (char *pString)
+{
+	if (   pString == 0
+	    || *pString == '\0')
+	{
+		return INVALID_VALUE;
+	}
+
+	unsigned nResult = 0;
+
+	char chChar;
+	while ((chChar = *pString++) != '\0')
+	{
+		if (!(('0' <= chChar && chChar <= '9') || ('a' <= chChar && chChar <= 'f') || ('A' <= chChar && chChar <= 'F')))
+		{
+			return INVALID_VALUE;
+		}
+
+		unsigned nPrevResult = nResult;
+
+		if (chChar >= '0' && chChar <= '9') nResult = nResult * 16 + (chChar - '0');
+		if (chChar >= 'a' && chChar <= 'f') nResult = nResult * 16 + (chChar - 'a' + 10);
+		if (chChar >= 'A' && chChar <= 'F') nResult = nResult * 16 + (chChar - 'A' + 10);
+
 		if (   nResult < nPrevResult
 		    || nResult == INVALID_VALUE)
 		{

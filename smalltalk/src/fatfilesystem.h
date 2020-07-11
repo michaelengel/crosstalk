@@ -44,7 +44,7 @@
 #include <circle/logger.h>
 #include <fatfs/ff.h>
 
-static const char FromKernel[] = "kernel";
+static const char FromKernel[] = "runtime";
 
 class FatST80FileSystem: public IFileSystem
 {
@@ -213,7 +213,7 @@ public:
         
         if (fdtofil[file_handle] != (FIL*)0) {
             fsize = f_size(fdtofil[file_handle]);
-            sprintf(s, "Checking file size fd %d = %08d\r\n", file_handle, fsize);
+            // CLogger::Get ()->Write (FromKernel, LogDebug, "Checking file size fd %d = %08d\r\n", file_handle, fsize);
             return fsize; // TODO: real position may be different?
         } else { return -1; }
     }
