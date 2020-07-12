@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 function clean {
   pushd . > /dev/null 2>&1
