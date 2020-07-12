@@ -15,8 +15,7 @@ LIBS	= $(CIRCLEHOME)/lib/usb/libusb.a \
 	  $(CIRCLEHOME)/addon/SDCard/libsdcard.a \
 	  $(CIRCLEHOME)/addon/fatfs/libfatfs.a \
 	  $(CIRCLEHOME)/lib/fs/libfs.a \
-	  $(CIRCLEHOME)/lib/libcircle.a \
-	  -lc -lstdc++
+	  $(CIRCLEHOME)/lib/libcircle.a 
 
 include ../Rules.mk
 

@@ -29,7 +29,7 @@ PREFIX	 ?= arm-none-eabi-
 PREFIX64 ?= aarch64-none-elf-
 
 # see: doc/stdlib-support.txt
-STDLIB_SUPPORT ?= 2
+STDLIB_SUPPORT ?= 3
 
 # set this to 0 to globally disable dependency checking
 CHECK_DEPS ?= 1
@@ -43,7 +43,7 @@ GC_SECTIONS ?= 0
 CC	= $(PREFIX)gcc
 CPP	= $(PREFIX)g++
 AS	= $(CC)
-LD	= $(PREFIX)gcc
+LD	= $(PREFIX)ld
 AR	= $(PREFIX)ar
 
 ifeq ($(strip $(AARCH)),32)
@@ -87,9 +87,14 @@ endif
 endif
 
 ifeq ($(strip $(STDLIB_SUPPORT)),3)
-LIBSTDCPP != $(CPP) $(ARCH) -print-file-name=libstdc++.a
+# LIBC      != $(CPP) $(ARCH) -print-file-name=libc.a
+LIBC      != $(CPP) -marm -print-file-name=libc.a
+EXTRALIBS += $(LIBC)
+# LIBSTDCPP != $(CPP) $(ARCH) -print-file-name=libstdc++.a
+LIBSTDCPP != $(CPP) -marm -print-file-name=libstdc++.a
 EXTRALIBS += $(LIBSTDCPP)
-LIBGCC_EH != $(CPP) $(ARCH) -print-file-name=libgcc_eh.a
+# LIBGCC_EH != $(CPP) $(ARCH) -print-file-name=libgcc_eh.a
+LIBGCC_EH != $(CPP) -marm -print-file-name=libgcc_eh.a
 ifneq ($(strip $(LIBGCC_EH)),libgcc_eh.a)
 EXTRALIBS += $(LIBGCC_EH)
 endif
@@ -117,7 +122,7 @@ endif
 
 ifeq ($(strip $(GC_SECTIONS)),1)
 CFLAGS	+= -ffunction-sections -fdata-sections
-LDFLAGS	+= -Wl,--gc-sections
+LDFLAGS	+= --gc-sections
 endif
 
 OPTIMIZE ?= -O2
@@ -130,7 +135,8 @@ DEFINE	+= -D__circle__ -DRASPPI=$(RASPPI) -DSTDLIB_SUPPORT=$(STDLIB_SUPPORT) \
 AFLAGS	+= $(ARCH) $(DEFINE) $(INCLUDE) $(OPTIMIZE)
 CFLAGS	+= $(ARCH) -fsigned-char -ffreestanding $(DEFINE) $(INCLUDE) $(OPTIMIZE) -g
 CPPFLAGS+= $(CFLAGS) -std=c++14
-LDFLAGS	+= -Wl,--section-start=.init=$(LOADADDR)
+# LDFLAGS	+= -Wl,--section-start=.init=$(LOADADDR)
+LDFLAGS	+= --section-start=.init=$(LOADADDR)
 
 ifeq ($(strip $(CHECK_DEPS)),1)
 DEPS	= $(OBJS:.o=.d)
@@ -159,9 +165,9 @@ endif
 
 $(TARGET).img: $(OBJS) $(LIBS) $(CIRCLEHOME)/circle.ld
 	@echo "  LD    $(TARGET).elf"
-	@$(LD) -o $(TARGET).elf -Wl,-Map=$(TARGET).map $(LDFLAGS) \
-		-Wl,-T $(CIRCLEHOME)/circle.ld $(CRTBEGIN) $(OBJS) \
-		-Wl,--start-group $(LIBS) $(EXTRALIBS) -Wl,--end-group $(CRTEND)
+	@$(LD) -o $(TARGET).elf -Map $(TARGET).map $(LDFLAGS) \
+		-T $(CIRCLEHOME)/circle.ld $(CRTBEGIN) $(OBJS) \
+		--start-group $(LIBS) $(EXTRALIBS) --end-group $(CRTEND)
 	@echo "  DUMP  $(TARGET).lst"
 	@$(PREFIX)objdump -d $(TARGET).elf | $(PREFIX)c++filt > $(TARGET).lst
 	@echo "  COPY  $(TARGET).img"

@@ -87,16 +87,18 @@ if [ "$1" = "clean" ]; then
 fi
 
 # Raspberry Pi 1/Zero
-echo "Building Smalltalk-80 bare metal for Raspberry Pi 1/Zero"
-build 1 
-cp smalltalk/raspberry/kernel.img sdboot/
-echo
+# echo "Building Smalltalk-80 bare metal for Raspberry Pi 1/Zero"
+# build 1 
+# cp smalltalk/raspberry/kernel.img sdboot/
+# echo
 
 # Raspberry Pi 2/3
 echo "Building Smalltalk-80 bare metal for Raspberry Pi 2 and 3"
 build 2 
 cp smalltalk/raspberry/kernel7.img sdboot/
 echo
+
+exit 0
 
 # Raspberry Pi 4
 echo "Building Smalltalk-80 bare metal for Raspberry Pi 4"

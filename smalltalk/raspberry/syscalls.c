@@ -82,4 +82,11 @@ int _read(int file, char *ptr, int len) {
 
 void _exit(int code)  _ATTRIBUTE ((__noreturn__));
 
+int _kill(pid_t pid, int sig) {
+    return -1;
+}
+
+pid_t _getpid(void) {
+    return -1;
+}
 
